@@ -1,13 +1,18 @@
-﻿namespace MineSweeper
+﻿using System.Linq.Expressions;
+
+namespace MineSweeper
 {
     internal class Program
     {
         static void Main(string[] args)
         {
+            HighscoreManager scoreManager = new HighscoreManager();
+
             while (true)
             {
                 Console.Clear();
                 Console.WriteLine("Menu:\n1) 8x8\n2) 12x12\n3) 16x16");
+
                 string choice = Console.ReadLine()!;
 
                 int size = choice switch
@@ -36,31 +41,81 @@
                 while (!game.Board.Explosion && !game.Board.HasWon())
                 {
                     RenderBoard(game.Board, false);
+
                     Console.WriteLine($"Seed: {seed}");
-                    Console.Write("> ");
+                    Console.Write($"Mines: {mines} ");
+                    Console.WriteLine($"Commands: r row col | f row col | q");
+                    Console.WriteLine("> ");
+
                     string input = Console.ReadLine()!;
+                    try
+                    {
+                        string[] parts = input.Split(' ');
 
-                    if (input == "q") break;
+                        if (parts.Length == 1 && parts[0].ToLower() == "q")
+                        {
+                            break;
+                        }
+                        if (parts.Length != 3)
+                        {
+                            throw new InvalidMoveException("Format must be r row col or f row col");
+                        }
+                        string command = parts[0].ToLower();
 
-                    string[] parts = input.Split(' ');
-                    if (parts.Length != 3)
-                        continue;
+                        if (!int.TryParse(parts[1], out int row) || !int.TryParse(parts[2], out int col))
+                        {
+                            throw new InvalidMoveException("Row and column gotta me numbers > 0");
 
+                        }
 
-                    string cmd = parts[0];
-                    int row = int.Parse(parts[1]);
-                    int col = int.Parse(parts[2]);
-
-                    if (cmd == "r") game.Reveal(row, col);
-                    if (cmd == "f") game.Flag(row, col);
+                        switch (command)
+                        {
+                            case "r":
+                                game.Reveal(row, col);
+                                break;
+                            case "f":
+                                game.Flag(row, col);
+                                break;
+                            default:
+                                throw new InvalidMoveException("Use r, f, or q");
+                        }
+                    }
+                    catch (InvalidMoveException ex)
+                    {
+                        Console.WriteLine($"{ex.Message}");
+                        Console.WriteLine($"Press enter");
+                        Console.WriteLine();
+                    }
                 }
 
                 RenderBoard(game.Board, true);
-                Console.WriteLine(game.Board.HasWon() ? "You Win!" : "Game Over!");
-                Console.WriteLine("Press Enter to return to menu...");
-                Console.ReadLine();
-            }
 
+                if (game.Board.HasWon())
+                {
+                    Console.WriteLine($"You win");
+                    Console.ReadLine();
+                    scoreManager.ScoreRecord(new Highscores
+                    {
+                        Size = size,
+                        Seconds = game.GetElapseSeconds(),
+                        Moves = game.Moves,
+                        Seed = seed,
+                        Time = DateTime.Now
+                    });
+
+                    Console.WriteLine($"High Score Recoredd");
+                    Console.ReadLine();
+                }
+                else if (game.Board.Explosion)
+                {
+                    Console.WriteLine($"Boom");
+                    Console.ReadLine();
+                }
+
+                Console.WriteLine($"Press enter to return to menu");
+                Console.WriteLine();
+
+            }
             static void RenderBoard(GameBoard board, bool revealAll)
             {
                 Console.Clear();
