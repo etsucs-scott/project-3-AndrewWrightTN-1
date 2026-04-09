@@ -4,6 +4,9 @@ namespace MineSweeper
 {
     internal class Program
     {
+        /// <summary>
+        /// Runs the game
+        /// </summary>
         static void Main(string[] args)
         {
             HighscoreManager scoreManager = new HighscoreManager();
@@ -116,6 +119,10 @@ namespace MineSweeper
                 Console.WriteLine();
 
             }
+
+            ///<summary>
+            /// Loads the board 
+            /// </summary>
             static void RenderBoard(GameBoard board, bool revealAll)
             {
                 Console.Clear();
